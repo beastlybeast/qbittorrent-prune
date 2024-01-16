@@ -55,7 +55,7 @@ fi
 api_url="${QB_URL}/api/v2"
 
 # Log into qBittorrent and save the cookie in a variable
-cookie=$(${CURL_CMD} --fail -i --header "Referer: ${QB_URL}" --data "username=${QB_USERNAME}&password=${QB_PASSWORD}" "${api_url}/auth/login" | grep "set-cookie: SID" | awk -F[=";"] '{print $2}')
+cookie=$(${CURL_CMD} --fail -i --header "Referer: ${QB_URL}" --data "username=${QB_USERNAME}&password=${QB_PASSWORD}" "${api_url}/auth/login" | grep "set-cookie: SID" | awk -F'[=";"]' '{print $2}')
 if [[ -z "${cookie}" ]]; then
     [[ ${LOG_LEVEL} -ge 1 ]] && echo "$(date -u) - ERROR: Could not log into qBittorrent, problem with host, port or credentials?"
     exit 1
