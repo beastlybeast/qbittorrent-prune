@@ -54,10 +54,40 @@ fi
 # Append the qBittorrent API path
 api_url="${QB_URL}/api/v2"
 
+
+<<"COMMENT"
 # Log into qBittorrent and save the cookie in a variable
 cookie=$(${CURL_CMD} --fail -i --header "Referer: ${QB_URL}" --data "username=${QB_USERNAME}&password=${QB_PASSWORD}" "${api_url}/auth/login" | grep "set-cookie: SID" | awk -F'[=";"]' '{print $2}')
 if [[ -z "${cookie}" ]]; then
     [[ ${LOG_LEVEL} -ge 1 ]] && echo "$(date -u) - ERROR: Could not log into qBittorrent, problem with host, port or credentials?"
+    exit 1
+else
+    [[ ${LOG_LEVEL} -ge 2 ]] && echo "$(date -u) - SUCCESS: Logged into qBittorrent, using cookie: ${cookie}"
+    fi
+COMMENT
+
+# Log into qBittorrent and save the cookie in a variable
+response=$( ${CURL_CMD} --fail -i --header "Referer: ${QB_URL}" --data "username=${QB_USERNAME}&password=${QB_PASSWORD}" "${api_url}/auth/login" )
+curl_status=$?
+
+if [[ ${curl_status} -ne 0 ]]; then
+    [[ ${LOG_LEVEL} -ge 1 ]] && echo "$(date -u) - ERROR: cURL command failed with status ${curl_status}. Problem with host, port, or credentials?"
+    exit 1
+fi
+
+cookie_line=$( echo "${response}" | grep "set-cookie: SID" )
+grep_status=$?
+
+if [[ ${grep_status} -ne 0 ]]; then
+    [[ ${LOG_LEVEL} -ge 1 ]] && echo "$(date -u) - ERROR: Failed to find 'set-cookie: SID' in the response."
+    exit 1
+fi
+
+cookie=$( echo "${cookie_line}" | awk -F'[=";"]' '{print $2}' )
+awk_status=$?
+
+if [[ -z "${cookie}" ]]; then
+    [[ ${LOG_LEVEL} -ge 1 ]] && echo "$(date -u) - ERROR: Failed to extract cookie from the response. AWK command exit status: ${awk_status}"
     exit 1
 else
     [[ ${LOG_LEVEL} -ge 2 ]] && echo "$(date -u) - SUCCESS: Logged into qBittorrent, using cookie: ${cookie}"
